@@ -1,81 +1,6 @@
-const openAIAPIKey = '';
-// const promptEnding = "Try to preserve the main point of what is being said. Rewrite the following:\n";
-// const prompts = [
-//   {
-//     "id": "nice",
-//     "title": "Nice and Friendly",
-//     "prompt": `Rewrite the following text to be nice and friendly. ` +
-//       `Remove any inappropriate content and try to make it professional and respectful. ` +
-//       promptEnding,
-//   },
-//   {
-//     "id": "bold",
-//     "title": "Bold and Ambitious",
-//     "prompt": `Rewrite the following text to be bolder and more ambitious. ` +
-//       `Make it sound grand and amazing. ` +
-//       promptEnding,
-//   },
-//   {
-//     "id": "happy",
-//     "title": "Happy and Optimistic",
-//     "prompt": `Rewrite the following text to be happier and more optimistic. ` +
-//       `It should put me in a positive mood. ` +
-//       `Use positive words and a cheerful tone. ` +
-//       promptEnding,
-//   },
-//   {
-//     "id": "logical",
-//     "title": "Terse and Logical",
-//     "prompt": `Rewrite the following text to be terse and logical. ` +
-//       `It should be straight to the point. ` +
-//       `Get rid of the fluff. ` +
-//       `Remove any and all unnecessary words. ` +
-//       promptEnding,
-//   },
-//   {
-//     "id": "funny",
-//     "title": "Funny and Humorous",
-//     "prompt": `Rewrite the following text to be humorous and funny. ` +
-//       `Add in a joke here or there. ` +
-//       `Make it more light hearted and fun. ` +
-//       promptEnding,
-//   },
-//   {
-//     "id": "official",
-//     "title": "Official and Bureaucratic",
-//     "prompt": `Rewrite the following text to sound more official and bureaucratic. ` +
-//       `It should sound like a robot wrote it, or a very astute communications person. ` +
-//       `Make it sound like how a government, large corporation or lawyer would write a press release. ` +
-//       promptEnding,
-//   },
-//   {
-//     "id": "romantic",
-//     "title": "Romantic and Loving",
-//     "prompt": `Rewrite the following text to be romantic and loving. ` +
-//       `Make it sound like a cheesy line from a romantic comedy movie. ` +
-//       promptEnding,
-//   },
-//   {
-//     "id": "flirty",
-//     "title": "Flirty and Sexy",
-//     "prompt": `Rewrite the following text to be flirty and sexy. ` +
-//       `It should sound suave and charming. ` +
-//       `Maybe even a little bit naughty, but not over-the-top. ` +
-//       `Flirtatious but not offensive. ` +
-//       promptEnding,
-//   },
-// ]
+const openAIAPIKey = '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';
 
-function findPromptById(id) {
-  for (let prompt of prompts) {
-    if (prompt.id === id) {
-      return prompt;
-    }
-  }
-  return null;
-}
-
-function replaceSelectedText(newText, tab) {
+function replaceText(newText, tab) {
   // Send a message to the content script to replace the selected text
   browser.tabs.sendMessage(tab.id, {
     action: "replaceText",
@@ -83,14 +8,70 @@ function replaceSelectedText(newText, tab) {
   });
 }
 
+function sendAlert(msg, tab) {
+  // Send a message to the content script to replace the selected text
+  browser.tabs.sendMessage(tab.id, {
+    action: "alert",
+    message: msg,
+  });
+}
 
-function handleClick(info, tab) {
-  const prompt = findPromptById(info.menuItemId);
-  const selectedText = info.selectionText;
-  const chatGptCommand = `${prompt.prompt}\n${selectedText}`;
+function showPopup(msg, tab) {
+  // Send a message to the content script to replace the selected text
+  browser.tabs.sendMessage(tab.id, {
+    action: "popup",
+    message: msg,
+  });
+}
 
+
+// Add an event listener for when a new tab is created
+browser.tabs.onCreated.addListener(function(tab) {
+  // Run your code here
+  console.log('New tab created:', tab.url);
+  // Send a message to the content script to replace the selected text
+  browser.tabs.sendMessage(tab.id, {
+    action: "loaded"
+  });
+});
+
+// Add an event listener for when a tab is updated (e.g., when a new URL is loaded)
+browser.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {
+  // Check if the page has finished loading
+  if (changeInfo.status === 'complete') {
+    // Run your code here
+    console.log('Page loaded:', tab.url);
+    // Send a message to the content script to replace the selected text
+    browser.tabs.sendMessage(tab.id, {
+      action: "loaded"
+    });
+  }
+});
+
+
+const checkPrompt = `Is the following message an nice and positive message to send? Just respond with yes or no, with a period and then followed by a reason in a single sentence. \n\n`;
+const rewritePrompt = `Can you rewrite this email to be nicer, more professional and inclusive? Please remove any inappropriate or offensive language. \n\n`;
+
+// Receives events sent from the in-browser code
+browser.runtime.onMessage.addListener((message, sender) => {
+  if (message.action === "checkText") {
+    runChatGptCompletion(checkPrompt + message.text).then((responseText) => {
+      if (responseText.toLowerCase().includes("no")) {
+        const reasonText = responseText.replace("No. ", "");
+        const popupText = `I'm sorry, I can't allow you to send this email. ${reasonText}\n\nWould you like me to rewrite this email for you?`;
+        showPopup(popupText, sender.tab);
+      }
+    });
+  } else if (message.action === "rewriteText") {
+    runChatGptCompletion(rewritePrompt + message.text).then((responseText) => {
+      replaceText(responseText, sender.tab);
+    });
+  }
+});
+
+function runChatGptCompletion(text) {
   // Make an API call using the fetch API
-  fetch("https://api.openai.com/v1/chat/completions", {
+  return fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST", // Specify the HTTP method (e.g., POST, GET, etc.)
     headers: {
       "Content-Type": "application/json", // Set the Content-Type header if required
@@ -98,36 +79,16 @@ function handleClick(info, tab) {
     },
     body: JSON.stringify({
       "model": "gpt-3.5-turbo",
-      "messages": [{"role": "user", "content": chatGptCommand}],
+      "messages": [{"role": "user", "content": text}],
       "temperature": 0.7
     }), // Pass any data in the request body
   })
     .then((response) => response.json())
     .then((data) => {
-      const text = data.choices[0].message.content;
-      replaceSelectedText(text, tab);
+      const responseText = data.choices[0].message.content;
+      return responseText;
     })
     .catch((error) => {
-      replaceSelectedText(JSON.stringify(error, null, 4), tab);
+      return JSON.stringify(error.toString(), null, 4);
     });
 }
-
-//
-// browser.contextMenus.create({
-//   id: "rewrite-text-base",
-//   title: "Rewrite text",
-//   contexts: ["selection"],
-// });
-//
-// for (let promptInfo of prompts) {
-//   browser.contextMenus.create({
-//     id: promptInfo.id,
-//     parentId: "rewrite-text-base",
-//     title: promptInfo.title,
-//     contexts: ["selection"],
-//   });
-// }
-//
-// browser.contextMenus.onClicked.addListener(handleClick);
-//
-//
