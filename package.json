@@ -1,5 +1,5 @@
 {
-  "name": "empath",
+  "name": "politewrite",
   "version": "0.0.2",
   "description": "",
   "main": "index.js",
@@ -8,15 +8,15 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/genixpro/empath.git"
+    "url": "git+https://github.com/genixpro/politewrite.git"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/genixpro/empath/issues"
+    "url": "https://github.com/genixpro/politewrite/issues"
   },
-  "homepage": "https://github.com/genixpro/empath#readme",
+  "homepage": "https://github.com/genixpro/politewrite#readme",
   "dependencies": {
     "web-ext": "^7.6.2"
   }

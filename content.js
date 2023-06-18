@@ -9,7 +9,7 @@ browser.runtime.onMessage.addListener(function (message) {
     removeSpinners();
     alert(message.message);
   } else if (message.action === "popup") {
-    showPopupOnGmailSendButton(message.message);
+    showPopupOnGmailSendButton(message.popupText, message.rewriteText);
     removeSpinners();
   } else if (message.action === "origSendButtonBehavior") {
     if (window.origSendButton) {
@@ -133,7 +133,7 @@ function deletePopupIfExists() {
 }
 
 // This function injects a popup dialog box at the given x, y coordinates
-function showPopup(x, y, text) {
+function showPopup(x, y, popupText, rewriteText) {
   deletePopupIfExists();
 
   const popupElementRoot = document.createElement("div");
@@ -158,7 +158,7 @@ function showPopup(x, y, text) {
   popupHeadingElement.style.paddingRight = `15px`;
   popupHeadingElement.style.paddingTop = `10px`;
   popupHeadingElement.style.paddingBottom = `10px`;
-  popupHeadingElement.innerText = "Emotional Assistant";
+  popupHeadingElement.innerText = "Polite Write";
 
   popupElementRoot.appendChild(popupHeadingElement);
 
@@ -173,12 +173,24 @@ function showPopup(x, y, text) {
 
   popupElementRoot.appendChild(popupBodyElement);
 
+  const popupTextElement = document.createElement("div");
+  popupTextElement.innerText = popupText;
+  popupTextElement.style.paddingLeft = `15px`;
+  popupTextElement.style.paddingRight = `15px`;
+  popupTextElement.style.paddingTop = `15px`;
+  popupTextElement.style.fontSize = '14px';
 
-  const textArea = document.createElement("div");
-  textArea.innerText = text;
-  textArea.style.padding = `15px`;
+  popupBodyElement.appendChild(popupTextElement);
 
-  popupBodyElement.appendChild(textArea);
+  const rewriteTextElement = document.createElement("div");
+  rewriteTextElement.innerText = rewriteText;
+  rewriteTextElement.style.padding = `10px`;
+  rewriteTextElement.style.margin = `25px`;
+  rewriteTextElement.style.fontFamily = 'Arial, Helvetica, sans-serif';
+  rewriteTextElement.style.fontSize = '13px';
+  rewriteTextElement.style.border = '1px inset grey';
+
+  popupBodyElement.appendChild(rewriteTextElement);
 
   const buttonGroup = document.createElement("div");
   buttonGroup.style.display = `flex`;
@@ -204,9 +216,16 @@ function showPopup(x, y, text) {
   acceptRewriteButton.style.flexGrow = `1`;
   acceptRewriteButton.style.color = `white`;
 
-  acceptRewriteButton.addEventListener("click", () => {
-    addSpinnerToGmailSendButton();
 
+  acceptRewriteButton.addEventListener("mouseenter", () => {
+    acceptRewriteButton.style.background = `#57a857`;
+  });
+
+  acceptRewriteButton.addEventListener("mouseleave", () => {
+    acceptRewriteButton.style.background = `#5cb85c`;
+  });
+
+  acceptRewriteButton.addEventListener("click", () => {
     const textEditor = findGmailTextEditor();
 
     // Sends the event out to the background process for the extension
@@ -226,7 +245,7 @@ function showPopup(x, y, text) {
   cancelButton.innerText = "Cancel";
   cancelButton.style.display = `inline-block`;
   cancelButton.style.margin = `0`;
-  cancelButton.style.background = `#d9534f`;
+  cancelButton.style.background = `#cb615f`;
   cancelButton.style.border = `1px solid #d43f3a`;
   cancelButton.style.borderRadius = `1px`;
   cancelButton.style.paddingLeft = `12px`;
@@ -238,6 +257,14 @@ function showPopup(x, y, text) {
   cancelButton.style.color = `white`;
 
   buttonGroup.appendChild(cancelButton);
+
+  cancelButton.addEventListener("mouseenter", () => {
+    cancelButton.style.background = `#a44d4b`;
+  });
+
+  cancelButton.addEventListener("mouseleave", () => {
+    cancelButton.style.background = `#cb615f`;
+  });
 
   cancelButton.addEventListener("click", () => {
     deletePopupIfExists();
@@ -257,13 +284,13 @@ function showPopup(x, y, text) {
 }
 
 
-function showPopupOnGmailSendButton(text) {
+function showPopupOnGmailSendButton(popupText, rewriteText) {
   const button = findGmailSendButton();
   const rect = button.getBoundingClientRect();
   const x = rect.right;
   const y = rect.top;
 
-  showPopup(x, y, text);
+  showPopup(x, y, popupText, rewriteText);
 }
 
 function addSpinnerToGmailSendButton() {

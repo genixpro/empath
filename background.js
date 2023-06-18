@@ -16,11 +16,12 @@ function showAlert(msg, tab) {
   });
 }
 
-function showPopup(msg, tab) {
+function showPopup(popupText, rewriteText, tab) {
   // Send a message to the content script to replace the selected text
   browser.tabs.sendMessage(tab.id, {
     action: "popup",
-    message: msg,
+    popupText,
+    rewriteText,
   });
 }
 
@@ -33,7 +34,7 @@ function triggerOriginalSendButtonBehaviour(tab) {
 
 
 // Add an event listener for when a new tab is created
-browser.tabs.onCreated.addListener(function(tab) {
+browser.tabs.onCreated.addListener(function (tab) {
   // Send a message to the content script to replace the selected text
   browser.tabs.sendMessage(tab.id, {
     action: "loaded"
@@ -41,7 +42,7 @@ browser.tabs.onCreated.addListener(function(tab) {
 });
 
 // Add an event listener for when a tab is updated (e.g., when a new URL is loaded)
-browser.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {
+browser.tabs.onUpdated.addListener(function (tabId, changeInfo, tab) {
   // Check if the page has finished loading
   if (changeInfo.status === 'complete') {
     // Send a message to the content script to replace the selected text
@@ -55,24 +56,29 @@ browser.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {
 const checkPrompt = `Is the following message an nice and positive message to send? Just respond with yes or no, with a period and then followed by a reason in a single sentence. \n\n`;
 const rewritePrompt = `Can you rewrite this email to be nicer, more professional and inclusive? Please remove any inappropriate or offensive language. Try to keep it to roughly the same length. \n\n`;
 
+let rewrittenText = ``;
+
 // Receives events sent from the in-browser code
 browser.runtime.onMessage.addListener((message, sender) => {
   if (message.action === "checkText") {
-    runChatGptCompletion(rewritePrompt + message.text).then((rewriteText) => {
-      runChatGptCompletion(checkPrompt + message.text).then((responseText) => {
-        if (responseText.toLowerCase().startsWith("no")) {
-          const reasonText = responseText.replace("No. ", "");
-          const popupText = `I'm sorry, I can't allow you to send this email. ${reasonText}\n\nWould you like to send the following email instead?\n\n${rewriteText}`;
-          showPopup(popupText, sender.tab);
-        } else {
-          triggerOriginalSendButtonBehaviour(sender.tab);
-        }
-      });
+    const promiseA = runChatGptCompletion(rewritePrompt + message.text);
+    const promiseB = runChatGptCompletion(checkPrompt + message.text);
+    Promise.all([promiseA, promiseB]).then((values) => {
+      const rewriteText = values[0];
+      const responseText = values[1];
+      rewrittenText = rewriteText;
+      if (responseText.toLowerCase().startsWith("no")) {
+        const reasonText = responseText.replace("No. ", "");
+        const popupText = `I'm sorry, I can't allow you to send this email. ${reasonText}\n\nWould you like to send the following email instead?`;
+        showPopup(popupText, rewriteText, sender.tab);
+      } else {
+        triggerOriginalSendButtonBehaviour(sender.tab);
+      }
     });
   } else if (message.action === "rewriteText") {
-    runChatGptCompletion(rewritePrompt + message.text).then((responseText) => {
-      replaceText(responseText, sender.tab);
-    });
+    // runChatGptCompletion(rewritePrompt + message.text).then((responseText) => {
+    replaceText(rewrittenText, sender.tab);
+    // });
   }
 });
 
