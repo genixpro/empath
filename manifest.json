@@ -3,7 +3,7 @@
   "name": "Polite Write",
   "version": "0.0.1",
   "description": "An extension to prevent you from sending messages you might regret.",
-  "permissions": ["contextMenus"],
+  "permissions": ["contextMenus", "tabs"],
   "background": {
     "scripts": ["background.js"],
     "persistent": false

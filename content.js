@@ -50,6 +50,9 @@ let chosenPlugin;
 if (window.location.hostname.includes("gmail.com")) {
   chosenPlugin = gmailPlugin;
 }
+if (window.location.hostname.includes("mail.google.com")) {
+  chosenPlugin = gmailPlugin;
+}
 if (window.location.hostname.includes("app.slack.com")) {
   chosenPlugin = slackPlugin;
 }
@@ -59,15 +62,15 @@ if (window.location.hostname.includes("app.slack.com")) {
 // Listen for messages from the background script
 browser.runtime.onMessage.addListener(function (message) {
   if (message && message.action === "replaceText" && message.newText) {
-    replaceTextGmailTextAreaMethod(message.newText);
+    replaceTextInTextEditor(message.newText);
     removeSpinners();
   } else if (message.action === "loaded") {
-    startWatchingForGmailSendButton();
+    startWatchingForSendButton();
   } else if (message.action === "alert") {
     removeSpinners();
     alert(message.message);
   } else if (message.action === "popup") {
-    showPopupOnGmailSendButton(message.popupText, message.rewriteText);
+    showPopupOnSendButton(message.popupText, message.rewriteText);
     removeSpinners();
   } else if (message.action === "origSendButtonBehavior") {
     removeSpinners();
@@ -77,7 +80,7 @@ browser.runtime.onMessage.addListener(function (message) {
   }
 });
 
-function replaceTextGmailTextAreaMethod(newText) {
+function replaceTextInTextEditor(newText) {
   const gmailTextArea = chosenPlugin.findEditingArea();
   const signature = getEmailSignatureBodyText();
 
@@ -91,13 +94,13 @@ function replaceTextGmailTextAreaMethod(newText) {
   }
 }
 
-function startWatchingForGmailSendButton() {
+function startWatchingForSendButton() {
   if (!window.lookForGmailSendButtonInterval) {
-    window.lookForGmailSendButtonInterval = setInterval(changeGmailButtonBehavior, 100);
+    window.lookForGmailSendButtonInterval = setInterval(changeSendButtonBehavior, 100);
   }
 }
 
-function changeGmailButtonBehavior() {
+function changeSendButtonBehavior() {
   const empathWrappedButton = findEmpathWrappedButton();
 
   if (!empathWrappedButton) {
@@ -349,7 +352,7 @@ function showPopup(x, y, popupText, rewriteText) {
 }
 
 
-function showPopupOnGmailSendButton(popupText, rewriteText) {
+function showPopupOnSendButton(popupText, rewriteText) {
   const button = chosenPlugin.findSendButton();
   const rect = button.getBoundingClientRect();
   const x = rect.right;

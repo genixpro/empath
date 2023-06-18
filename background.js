@@ -52,15 +52,43 @@ browser.tabs.onUpdated.addListener(function (tabId, changeInfo, tab) {
   }
 });
 
+function getMessageWordForUrl(url) {
+  let messageWord = "message";
 
-const checkPrompt = `Is the following message an nice and positive message to send? Just respond with yes or no, with a period and then followed by a reason in a single sentence. \n\n`;
-const rewritePrompt = `Can you rewrite this email to be nicer, more professional and inclusive? Please remove any inappropriate or offensive language. Try to keep it to roughly the same length. \n\n`;
+  if (url.toLowerCase().includes("gmail.com")) {
+    messageWord = "email";
+  }
 
+  if (url.toLowerCase().includes("mail.google.com")) {
+    messageWord = "email";
+  }
+
+  if (url.toLowerCase().includes("twitter.com")) {
+    messageWord = "tweet";
+  }
+
+  return messageWord;
+}
+
+function getCheckPromptForURL(url) {
+  const messageWord = getMessageWordForUrl(url);
+  return `Is the following ${messageWord} an nice and positive ${messageWord} to send? Just respond with yes or no, with a period and then followed by a reason in a single sentence. \n\n`;
+}
+
+function getRewritePromptForURL(url) {
+  const messageWord = getMessageWordForUrl(url);
+  return `Can you rewrite this ${messageWord} to be nicer, more professional and inclusive? Please remove any inappropriate or offensive language. Try to keep it to roughly the same length. \n\n`;
+}
 let rewrittenText = ``;
 
 // Receives events sent from the in-browser code
 browser.runtime.onMessage.addListener((message, sender) => {
   if (message.action === "checkText") {
+    const tab = sender.tab;
+    const url = tab.url;
+    const checkPrompt = getCheckPromptForURL(url);
+    const rewritePrompt = getRewritePromptForURL(url);
+
     const promiseA = runChatGptCompletion(rewritePrompt + message.text);
     const promiseB = runChatGptCompletion(checkPrompt + message.text);
     Promise.all([promiseA, promiseB]).then((values) => {
