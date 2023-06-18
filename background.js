@@ -58,14 +58,16 @@ const rewritePrompt = `Can you rewrite this email to be nicer, more professional
 // Receives events sent from the in-browser code
 browser.runtime.onMessage.addListener((message, sender) => {
   if (message.action === "checkText") {
-    runChatGptCompletion(checkPrompt + message.text).then((responseText) => {
-      if (responseText.toLowerCase().startsWith("no")) {
-        const reasonText = responseText.replace("No. ", "");
-        const popupText = `I'm sorry, I can't allow you to send this email. ${reasonText}\n\nWould you like me to rewrite this email for you?`;
-        showPopup(popupText, sender.tab);
-      } else {
-        triggerOriginalSendButtonBehaviour(sender.tab);
-      }
+    runChatGptCompletion(rewritePrompt + message.text).then((rewriteText) => {
+      runChatGptCompletion(checkPrompt + message.text).then((responseText) => {
+        if (responseText.toLowerCase().startsWith("no")) {
+          const reasonText = responseText.replace("No. ", "");
+          const popupText = `I'm sorry, I can't allow you to send this email. ${reasonText}\n\nWould you like to send the following email instead?\n\n${rewriteText}`;
+          showPopup(popupText, sender.tab);
+        } else {
+          triggerOriginalSendButtonBehaviour(sender.tab);
+        }
+      });
     });
   } else if (message.action === "rewriteText") {
     runChatGptCompletion(rewritePrompt + message.text).then((responseText) => {
