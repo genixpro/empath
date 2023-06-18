@@ -1,4 +1,4 @@
-const openAIAPIKey = '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';
+const openAIAPIKey = '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';
 
 function replaceText(newText, tab) {
   // Send a message to the content script to replace the selected text
@@ -8,7 +8,7 @@ function replaceText(newText, tab) {
   });
 }
 
-function sendAlert(msg, tab) {
+function showAlert(msg, tab) {
   // Send a message to the content script to replace the selected text
   browser.tabs.sendMessage(tab.id, {
     action: "alert",
@@ -27,8 +27,6 @@ function showPopup(msg, tab) {
 
 // Add an event listener for when a new tab is created
 browser.tabs.onCreated.addListener(function(tab) {
-  // Run your code here
-  console.log('New tab created:', tab.url);
   // Send a message to the content script to replace the selected text
   browser.tabs.sendMessage(tab.id, {
     action: "loaded"
@@ -39,8 +37,6 @@ browser.tabs.onCreated.addListener(function(tab) {
 browser.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {
   // Check if the page has finished loading
   if (changeInfo.status === 'complete') {
-    // Run your code here
-    console.log('Page loaded:', tab.url);
     // Send a message to the content script to replace the selected text
     browser.tabs.sendMessage(tab.id, {
       action: "loaded"
@@ -50,7 +46,7 @@ browser.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {
 
 
 const checkPrompt = `Is the following message an nice and positive message to send? Just respond with yes or no, with a period and then followed by a reason in a single sentence. \n\n`;
-const rewritePrompt = `Can you rewrite this email to be nicer, more professional and inclusive? Please remove any inappropriate or offensive language. \n\n`;
+const rewritePrompt = `Can you rewrite this email to be nicer, more professional and inclusive? Please remove any inappropriate or offensive language. Try to keep it to roughly the same length. \n\n`;
 
 // Receives events sent from the in-browser code
 browser.runtime.onMessage.addListener((message, sender) => {
@@ -85,8 +81,7 @@ function runChatGptCompletion(text) {
   })
     .then((response) => response.json())
     .then((data) => {
-      const responseText = data.choices[0].message.content;
-      return responseText;
+      return data.choices[0].message.content;
     })
     .catch((error) => {
       return JSON.stringify(error.toString(), null, 4);
