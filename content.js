@@ -1,6 +1,7 @@
 // Listen for messages from the background script
 browser.runtime.onMessage.addListener(function (message) {
   if (message && message.action === "replaceText" && message.newText) {
+    window.lastRewriteText = message.newText;
     replaceTextGmailTextAreaMethod(message.newText);
     removeSpinners();
   } else if (message.action === "loaded") {
@@ -12,6 +13,7 @@ browser.runtime.onMessage.addListener(function (message) {
     showPopupOnGmailSendButton(message.popupText, message.rewriteText);
     removeSpinners();
   } else if (message.action === "origSendButtonBehavior") {
+    removeSpinners();
     if (window.origSendButton) {
       window.origSendButton.click();
     }
@@ -53,6 +55,12 @@ function changeGmailButtonBehavior() {
       sendButton.addEventListener("click", () => {
         const text = getTextFromCurrentInProgressEmail();
 
+        if (text === window.lastRewriteText) {
+          // We've already rewritten this text, so just send the email
+          window.origSendButton.click();
+          return;
+        }
+
         addSpinnerToGmailSendButton();
 
         // Sends the event out to the background process for the extension
@@ -60,6 +68,8 @@ function changeGmailButtonBehavior() {
           action: "checkText",
           text: text,
         });
+
+        sendButton.blur();
       })
     }
   }
@@ -147,18 +157,21 @@ function showPopup(x, y, popupText, rewriteText) {
   popupElementRoot.style.display = `flex`;
   popupElementRoot.style.flexDirection = `column`;
   popupElementRoot.style.zIndex = 100000;
+  popupElementRoot.style.boxShadow = '0px 8px 10px 1px rgba(0,0,0,.14),0px 3px 14px 2px rgba(0,0,0,.12),0px 5px 5px -3px rgba(0,0,0,.2)';
 
   const popupHeadingElement = document.createElement("div");
   // Sets the CSS position of the element
-  popupHeadingElement.style.background = `rgb(163, 160, 255)`;
-  popupHeadingElement.style.borderTopLeftRadius = `3px`;
-  popupHeadingElement.style.borderTopRightRadius = `3px`;
-  popupHeadingElement.style.border = `#ddd 1px solid`;
+  popupHeadingElement.style.background = `rgb(217, 237, 247)`;
+  popupHeadingElement.style.borderTopLeftRadius = `5px`;
+  popupHeadingElement.style.borderTopRightRadius = `5px`;
+  popupHeadingElement.style.border = `rgb(173, 217, 225) 1px solid`;
   popupHeadingElement.style.paddingLeft = `15px`;
   popupHeadingElement.style.paddingRight = `15px`;
   popupHeadingElement.style.paddingTop = `10px`;
   popupHeadingElement.style.paddingBottom = `10px`;
-  popupHeadingElement.innerText = "Polite Write";
+  popupHeadingElement.style.fontWeight = `500`;
+  popupHeadingElement.style.color = `rgb(40, 90, 115)`;
+  popupHeadingElement.innerText = "PoliteWrite";
 
   popupElementRoot.appendChild(popupHeadingElement);
 
@@ -167,9 +180,9 @@ function showPopup(x, y, popupText, rewriteText) {
   popupBodyElement.style.display = "flex";
   popupBodyElement.style.flexDirection = "column";
   popupBodyElement.style.background = `white`;
-  popupBodyElement.style.borderLeft = `#ddd 1px solid`;
-  popupBodyElement.style.borderRight = `#ddd 1px solid`;
-  popupBodyElement.style.borderBottom = `#ddd 1px solid`;
+  popupBodyElement.style.borderLeft = `rgb(173, 217, 225) 1px solid`;
+  popupBodyElement.style.borderRight = `rgb(173, 217, 225) 1px solid`;
+  popupBodyElement.style.borderBottom = `rgb(173, 217, 225) 1px solid`;
 
   popupElementRoot.appendChild(popupBodyElement);
 
