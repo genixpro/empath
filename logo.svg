@@ -9,7 +9,7 @@
    id="svg21"
    inkscape:version="1.2.2 (b0a8486, 2022-12-01)"
    sodipodi:docname="logo.svg"
-   inkscape:export-filename="logo.png"
+   inkscape:export-filename="../politewrite/logo.png"
    inkscape:export-xdpi="46.080002"
    inkscape:export-ydpi="46.080002"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
@@ -28,10 +28,10 @@
      inkscape:document-units="mm"
      showgrid="false"
      inkscape:zoom="4.3965938"
-     inkscape:cx="19.674322"
-     inkscape:cy="53.22302"
+     inkscape:cx="20.129219"
+     inkscape:cy="86.999167"
      inkscape:window-width="1792"
-     inkscape:window-height="974"
+     inkscape:window-height="977"
      inkscape:window-x="0"
      inkscape:window-y="25"
      inkscape:window-maximized="1"
@@ -52,6 +52,6 @@
          id="tspan127"
          style="fill:#000080;stroke-width:2.66082"
          x="2.7503176"
-         y="24.474901">E</tspan></text>
+         y="24.474901">P</tspan></text>
   </g>
 </svg>
