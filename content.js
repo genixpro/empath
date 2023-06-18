@@ -19,7 +19,7 @@ const gmailPlugin = {
   },
   shouldHandleReturnKey() {
     return false;
-  }
+  },
 }
 const slackPlugin = {
   findSendButton() {
@@ -242,6 +242,7 @@ function showPopup(x, y, popupText, rewriteText) {
   popupTextElement.style.paddingRight = `15px`;
   popupTextElement.style.paddingTop = `15px`;
   popupTextElement.style.fontSize = '14px';
+  popupTextElement.style.color = 'black';
 
   popupBodyElement.appendChild(popupTextElement);
 
@@ -252,6 +253,7 @@ function showPopup(x, y, popupText, rewriteText) {
   rewriteTextElement.style.fontFamily = 'Arial, Helvetica, sans-serif';
   rewriteTextElement.style.fontSize = '13px';
   rewriteTextElement.style.border = '1px inset grey';
+  rewriteTextElement.style.color = 'black';
 
   popupBodyElement.appendChild(rewriteTextElement);
 

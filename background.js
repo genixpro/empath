@@ -69,7 +69,7 @@ browser.runtime.onMessage.addListener((message, sender) => {
       rewrittenText = rewriteText;
       if (responseText.toLowerCase().startsWith("no")) {
         const reasonText = responseText.replace("No. ", "");
-        const popupText = `I'm sorry, I can't allow you to send this email. ${reasonText}\n\nWould you like to send the following email instead?`;
+        const popupText = `I'm sorry, I can't allow you to send this. ${reasonText}\n\nWould you like to send the following instead?`;
         showPopup(popupText, rewriteText, sender.tab);
       } else {
         triggerOriginalSendButtonBehaviour(sender.tab);
