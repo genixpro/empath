@@ -1,3 +1,61 @@
+const gmailPlugin = {
+  findSendButton() {
+    const sendButton = document.querySelector("div[role='button'][data-tooltip^='Send']");
+
+    if (sendButton) {
+      return sendButton;
+    }
+
+    return null;
+  },
+  findEditingArea() {
+    const textEditor = document.querySelector("div[aria-label='Message Body'][role='textbox']");
+
+    if (textEditor) {
+      return textEditor;
+    }
+
+    return null;
+  },
+  shouldHandleReturnKey() {
+    return false;
+  }
+}
+const slackPlugin = {
+  findSendButton() {
+    const sendButton = document.querySelector(".c-wysiwyg_container__send_button--with_options");
+
+    if (sendButton) {
+      return sendButton;
+    }
+
+    return null;
+  },
+  findEditingArea() {
+    const textEditor = document.querySelector("div.ql-editor");
+
+    if (textEditor) {
+      return textEditor;
+    }
+
+    return null;
+  },
+  shouldHandleReturnKey() {
+    return true;
+  }
+}
+
+
+let chosenPlugin;
+if (window.location.hostname.includes("gmail.com")) {
+  chosenPlugin = gmailPlugin;
+}
+if (window.location.hostname.includes("app.slack.com")) {
+  chosenPlugin = slackPlugin;
+}
+
+
+
 // Listen for messages from the background script
 browser.runtime.onMessage.addListener(function (message) {
   if (message && message.action === "replaceText" && message.newText) {
@@ -20,7 +78,7 @@ browser.runtime.onMessage.addListener(function (message) {
 });
 
 function replaceTextGmailTextAreaMethod(newText) {
-  const gmailTextArea = findGmailTextEditor();
+  const gmailTextArea = chosenPlugin.findEditingArea();
   const signature = getEmailSignatureBodyText();
 
   if (gmailTextArea) {
@@ -43,16 +101,17 @@ function changeGmailButtonBehavior() {
   const empathWrappedButton = findEmpathWrappedButton();
 
   if (!empathWrappedButton) {
-    let sendButton = findGmailSendButton();
+    let sendButton = chosenPlugin.findSendButton();
+    let editArea = chosenPlugin.findEditingArea();
 
     if (sendButton) {
       window.origSendButton = sendButton;
 
       // Removes all the event handlers associatted with a button
       sendButton.outerHTML = "<div class='empath-wrapped'>" + sendButton.outerHTML + "</div>";
+      sendButton = chosenPlugin.findSendButton();
 
-      sendButton = findGmailSendButton();
-      sendButton.addEventListener("click", () => {
+      const interceptHandler = () => {
         const text = getTextFromCurrentInProgressEmail();
 
         if (text && window.lastRewriteText && areTextsApproximatelyEquivalent(text, window.lastRewriteText)) {
@@ -70,7 +129,20 @@ function changeGmailButtonBehavior() {
         });
 
         sendButton.blur();
-      })
+      };
+
+      sendButton.addEventListener("click", interceptHandler);
+
+      if (chosenPlugin.shouldHandleReturnKey()) {
+        editArea.addEventListener("keydown", (event) => {
+          if (event.keyCode === 13 && !event.shiftKey) {
+            event.preventDefault();
+            event.stopPropagation();
+
+            interceptHandler();
+          }
+        });
+      }
     }
   }
 }
@@ -85,31 +157,9 @@ function findEmpathWrappedButton() {
   return null;
 }
 
-
-function findGmailSendButton() {
-  const sendButton = document.querySelector("div[role='button'][data-tooltip^='Send']");
-
-  if (sendButton) {
-    return sendButton;
-  }
-
-  return null;
-}
-
-
-function findGmailTextEditor() {
-  const textEditor = document.querySelector("div[aria-label='Message Body'][role='textbox']");
-
-  if (textEditor) {
-    return textEditor;
-  }
-
-  return null;
-}
-
 // This function gets all of the text from the email you are about to send
 function getTextFromCurrentInProgressEmail() {
-  const textEditor = findGmailTextEditor();
+  const textEditor = chosenPlugin.findEditingArea();
 
   if (textEditor) {
     const signature = getEmailSignatureBodyText();
@@ -239,7 +289,7 @@ function showPopup(x, y, popupText, rewriteText) {
   });
 
   acceptRewriteButton.addEventListener("click", () => {
-    const textEditor = findGmailTextEditor();
+    const textEditor = chosenPlugin.findEditingArea();
 
     // Sends the event out to the background process for the extension
     browser.runtime.sendMessage({
@@ -298,7 +348,7 @@ function showPopup(x, y, popupText, rewriteText) {
 
 
 function showPopupOnGmailSendButton(popupText, rewriteText) {
-  const button = findGmailSendButton();
+  const button = chosenPlugin.findSendButton();
   const rect = button.getBoundingClientRect();
   const x = rect.right;
   const y = rect.top;
@@ -307,7 +357,7 @@ function showPopupOnGmailSendButton(popupText, rewriteText) {
 }
 
 function addSpinnerToGmailSendButton() {
-  const sendButton = findGmailSendButton();
+  const sendButton = chosenPlugin.findSendButton();
 
   const spinner = document.createElement("img");
   spinner.src = spinnerGifDataUrl;
