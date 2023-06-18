@@ -1,4 +1,4 @@
-const openAIAPIKey = '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';
+const openAIAPIKey = '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';
 
 function replaceText(newText, tab) {
   // Send a message to the content script to replace the selected text
@@ -21,6 +21,13 @@ function showPopup(msg, tab) {
   browser.tabs.sendMessage(tab.id, {
     action: "popup",
     message: msg,
+  });
+}
+
+function triggerOriginalSendButtonBehaviour(tab) {
+  // Send a message to the content script to replace the selected text
+  browser.tabs.sendMessage(tab.id, {
+    action: "origSendButtonBehavior"
   });
 }
 
@@ -52,10 +59,12 @@ const rewritePrompt = `Can you rewrite this email to be nicer, more professional
 browser.runtime.onMessage.addListener((message, sender) => {
   if (message.action === "checkText") {
     runChatGptCompletion(checkPrompt + message.text).then((responseText) => {
-      if (responseText.toLowerCase().includes("no")) {
+      if (responseText.toLowerCase().startsWith("no")) {
         const reasonText = responseText.replace("No. ", "");
         const popupText = `I'm sorry, I can't allow you to send this email. ${reasonText}\n\nWould you like me to rewrite this email for you?`;
         showPopup(popupText, sender.tab);
+      } else {
+        triggerOriginalSendButtonBehaviour(sender.tab);
       }
     });
   } else if (message.action === "rewriteText") {

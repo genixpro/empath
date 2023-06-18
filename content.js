@@ -11,6 +11,10 @@ browser.runtime.onMessage.addListener(function (message) {
   } else if (message.action === "popup") {
     showPopupOnGmailSendButton(message.message);
     removeSpinners();
+  } else if (message.action === "origSendButtonBehavior") {
+    if (window.origSendButton) {
+      window.origSendButton.click();
+    }
   }
 });
 
@@ -40,10 +44,10 @@ function changeGmailButtonBehavior() {
     let sendButton = findGmailSendButton();
 
     if (sendButton) {
+      window.origSendButton = sendButton;
+
       // Removes all the event handlers associatted with a button
-      if (!sendButton.outerHTML.includes("empath-wrapped")) {
-        sendButton.outerHTML = "<div class='empath-wrapped'>" + sendButton.outerHTML + "</div>";
-      }
+      sendButton.outerHTML = "<div class='empath-wrapped'>" + sendButton.outerHTML + "</div>";
 
       sendButton = findGmailSendButton();
       sendButton.addEventListener("click", () => {
